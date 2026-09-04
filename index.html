@@ -273,16 +273,21 @@ $('sid').addEventListener('keydown', function (e) {
 
 /* ==================== กล้อง ==================== */
 
-function startCam(deviceId, isRetry) {
+function startCam(deviceId, isRetry, strict) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     msg('เบราว์เซอร์นี้เรียกกล้องไม่ได้', 'err'); return;
   }
   stopCam();
 
-  // deviceId ที่จำไว้อาจใช้ไม่ได้แล้ว (สลับพอร์ต/ถอดสาย) จึงใช้แบบ ideal ไม่ใช่ exact
-  var v = deviceId
-    ? { deviceId: { ideal: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-    : { width: { ideal: 1920 }, height: { ideal: 1080 } };
+  // strict = ผู้ใช้เลือกอุปกรณ์เอง ต้องได้ตัวนั้นเท่านั้น ห้ามสลับให้
+  var v;
+  if (deviceId && strict) {
+    v = { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } };
+  } else if (deviceId) {
+    v = { deviceId: { ideal: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } };
+  } else {
+    v = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+  }
 
   navigator.mediaDevices.getUserMedia({ video: v, audio: false })
     .then(function (s) {
@@ -302,20 +307,31 @@ function startCam(deviceId, isRetry) {
         sel.appendChild(o);
       });
       var t = stream.getVideoTracks()[0];
-      if (t.getSettings && t.getSettings().deviceId) sel.value = t.getSettings().deviceId;
+      var got = (t.getSettings && t.getSettings().deviceId) || '';
+      if (got) sel.value = got;
       try { localStorage.setItem('sc_device', sel.value); } catch (e) {}
-      msg('เปิดกล้องแล้ว : ' + t.label, 'ok');
+
+      var st = t.getSettings ? t.getSettings() : {};
+      if (deviceId && got && got !== deviceId) {
+        msg('ระบบสลับไปใช้ ' + t.label + ' แทนอุปกรณ์ที่เลือก', 'wait');
+      } else {
+        msg('เปิดกล้องแล้ว : ' + t.label + '  ' + (st.width || '?') + 'x' + (st.height || '?'), 'ok');
+      }
     })
     .catch(function (err) {
-      // ขออุปกรณ์ที่ระบุไม่ได้ ลองใหม่แบบปล่อยให้ระบบเลือกเอง
-      if (!isRetry && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+      // ผู้ใช้เลือกเอง ต้องรู้ว่าพังเพราะอะไร ไม่สลับให้เงียบ ๆ
+      if (!strict && !isRetry && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
         try { localStorage.removeItem('sc_device'); } catch (e) {}
         $('devices').value = '';
         msg('เลือกอุปกรณ์เดิมไม่ได้ กำลังลองใหม่...', 'wait');
-        startCam(null, true);
+        startCam(null, true, false);
         return;
       }
-      msg('เปิดกล้องไม่สำเร็จ (' + err.name + ') ' + err.message, 'err');
+      var hint = '';
+      if (err.name === 'NotReadableError') hint = ' — โปรแกรมอื่นยึดการ์ดอยู่ ปิดแอป Camera กับ OBS ก่อน';
+      if (err.name === 'OverconstrainedError') hint = ' — การ์ดไม่รองรับความละเอียดที่ขอ หรือกล้องยังไม่ส่งสัญญาณ HDMI ออกมา';
+      if (err.name === 'NotFoundError') hint = ' — หาอุปกรณ์ไม่เจอ ลองถอดเสียบสายใหม่';
+      msg('เปิดกล้องไม่สำเร็จ (' + err.name + ') ' + err.message + hint, 'err');
     });
 }
 
@@ -328,9 +344,10 @@ function stopCam() {
 $('btnStart').addEventListener('click', function () {
   var saved = null;
   try { saved = localStorage.getItem('sc_device'); } catch (e) {}
-  startCam($('devices').value || saved || null);
+  var pick = $('devices').value || saved || null;
+  startCam(pick, false, !!$('devices').value);
 });
-$('devices').addEventListener('change', function () { if (stream) startCam(this.value || null); });
+$('devices').addEventListener('change', function () { startCam(this.value || null, false, !!this.value); });
 $('btnMirror').addEventListener('click', function () { $('stage').classList.toggle('mirror'); });
 
 /* ==================== ถ่าย / บันทึก ==================== */
