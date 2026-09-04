@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ออกบัตรนักเรียน</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #1a3a6b; --line: #d7dee9; --bg: #eef1f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 18px; font-family: "Prompt", "Segoe UI", sans-serif;
+         background: var(--bg); color: #1a2233; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; justify-content: space-between;
+           gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  h1 { font-size: 20px; margin: 0; color: var(--navy); font-weight: 600; }
+  .ver { font-size: 13px; font-weight: 400; color: #8a94a6; }
+
+  .card { background: #fff; border-radius: 14px; padding: 16px;
+          box-shadow: 0 1px 5px rgba(20,40,80,.08); margin-bottom: 16px; }
+
+  button { font-family: inherit; font-size: 15px; font-weight: 500; padding: 11px 20px;
+           border: none; border-radius: 9px; background: var(--navy); color: #fff; cursor: pointer; }
+  button.ghost { background: #e4e9f2; color: var(--navy); }
+  button.green { background: #137333; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+
+  select, input { font-family: inherit; font-size: 15px; padding: 10px 12px;
+                  border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+  label { display: block; font-size: 13px; color: #556; margin: 0 0 5px; font-weight: 500; }
+  .field { display: inline-block; margin-right: 14px; vertical-align: top; }
+
+  .msg { margin-top: 10px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  .msg.show { display: block; }
+  .msg.ok { background: #e6f4ea; color: #137333; }
+  .msg.err { background: #fce8e6; color: #b31412; }
+  .msg.wait { background: #fef7e0; color: #8a6100; }
+  .hidden { display: none !important; }
+  .setup { max-width: 520px; margin: 40px auto; }
+  .setup input { width: 100%; margin-bottom: 4px; }
+  .tiny { font-size: 12px; color: #7a8496; }
+
+  /* ---------- แผ่น A4 ---------- */
+  #sheets { margin-top: 6px; }
+  .page {
+    width: 210mm; min-height: 297mm; background: #fff; margin: 0 auto 16px;
+    padding: 10mm 9mm; display: grid;
+    grid-template-columns: repeat(3, 54mm);
+    grid-auto-rows: 85.6mm;
+    gap: 6mm 9mm; justify-content: center; align-content: start;
+    box-shadow: 0 2px 10px rgba(20,40,80,.12);
+  }
+
+  /* ---------- ตัวบัตร ---------- */
+  .idcard {
+    width: 54mm; height: 85.6mm; background: #fff;
+    border: 0.2mm dashed #bbb; border-radius: 3mm;
+    padding: 3.5mm 3mm; text-align: center; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .idcard .logo { height: 9mm; margin-bottom: 1mm; }
+  .idcard .logo img { height: 100%; object-fit: contain; }
+  .idcard .sch-th { font-size: 3.1mm; font-weight: 600; color: var(--navy); line-height: 1.2; }
+  .idcard .sch-en { font-size: 2.2mm; font-weight: 500; color: var(--navy); line-height: 1.3; margin-bottom: 1.5mm; }
+
+  .idcard .photo {
+    width: 27mm; height: 36mm; border: 0.6mm solid var(--navy); border-radius: 2mm;
+    overflow: hidden; background: #e8ecf3; margin-bottom: 2mm; flex: none;
+  }
+  .idcard .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .idcard .nm { font-size: 3.3mm; font-weight: 600; line-height: 1.25; }
+  .idcard .nk { font-size: 4.2mm; font-weight: 700; color: #111; line-height: 1.3; margin-bottom: 1mm; }
+  .idcard .type {
+    background: var(--navy); color: #fff; font-size: 2.6mm; font-weight: 600;
+    padding: 0.8mm 4mm; border-radius: 1.5mm; margin-bottom: 1.8mm;
+  }
+  .idcard .info { font-size: 2.7mm; line-height: 1.55; width: 100%; }
+  .idcard .info span { color: #444; }
+  .idcard .info b { font-weight: 600; }
+  .idcard .foot {
+    margin-top: auto; width: 100%; border-top: 0.2mm solid var(--line);
+    padding-top: 1.2mm; font-size: 2.2mm; font-weight: 500; color: var(--navy);
+  }
+
+  /* ---------- ตอนพิมพ์ ---------- */
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .noprint { display: none !important; }
+    .page { box-shadow: none; margin: 0; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .idcard { border-color: #ddd; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ตั้งค่าครั้งแรก -->
+  <div id="setup" class="card setup hidden noprint">
+    <h1 style="margin-bottom:6px">ตั้งค่าครั้งแรก</h1>
+    <div class="tiny" style="margin:0 0 14px">ใช้ค่าเดียวกับหน้าถ่ายรูป</div>
+    <label>ลิงก์ Web App (ลงท้ายด้วย /exec)</label>
+    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <label style="margin-top:10px">รหัสผ่าน</label>
+    <input id="cfgToken" type="password">
+    <div class="btnbar"><button id="btnSaveCfg">บันทึกและเชื่อมต่อ</button></div>
+    <div id="cfgMsg" class="msg"></div>
+  </div>
+
+  <!-- หน้าทำงาน -->
+  <div id="app" class="hidden">
+    <header class="noprint">
+      <h1>ออกบัตรนักเรียน <span class="ver">v1</span></h1>
+      <div>
+        <button class="ghost" id="btnCfg" style="padding:7px 14px;font-size:13px">ตั้งค่า</button>
+      </div>
+    </header>
+
+    <div class="card noprint">
+      <div class="field">
+        <label>ห้องเรียน</label>
+        <select id="room"><option value="">— กำลังโหลด —</option></select>
+      </div>
+      <div class="field">
+        <label>ตัวเลือก</label>
+        <div style="padding-top:9px">
+          <label style="display:inline;font-weight:400">
+            <input type="checkbox" id="onlyPhoto" checked style="width:auto"> เฉพาะคนที่มีรูปแล้ว
+          </label>
+        </div>
+      </div>
+      <div class="btnbar">
+        <button id="btnLoad">โหลดข้อมูลบัตร</button>
+        <button id="btnPrint" class="green" disabled>พิมพ์ / บันทึก PDF</button>
+        <button id="btnMark" class="ghost" disabled>ติดสถานะว่าพิมพ์แล้ว</button>
+        <span id="count" class="tiny"></span>
+      </div>
+      <div id="msg" class="msg"></div>
+      <div class="tiny" style="margin-top:10px">
+        บัตรขนาด 54 × 85.6 มม. เรียง 9 ใบต่อแผ่น A4 · ตอนสั่งพิมพ์ให้ตั้ง Margins เป็น None
+        และ Scale เป็น 100% ห้ามใช้ Fit to page ไม่งั้นขนาดบัตรจะเพี้ยน
+      </div>
+    </div>
+
+    <div id="sheets"></div>
+  </div>
+
+</div>
+
+<script>
+var CFG = { url: '', token: '' };
+var loaded = [];       // ข้อมูลบัตรที่โหลดมาแล้ว
+var schoolTh = '', schoolEn = '';
+var LOGO = 'logo.png'; // ไฟล์โลโก้ใน repo เดียวกัน
+var logoOk = true;
+
+var $ = function (id) { return document.getElementById(id); };
+
+/* ---------- ตั้งค่า ---------- */
+function loadCfg() {
+  try {
+    CFG.url = localStorage.getItem('sc_url') || '';
+    CFG.token = localStorage.getItem('sc_token') || '';
+  } catch (e) {}
+  return CFG.url && CFG.token;
+}
+function showSetup() { $('setup').classList.remove('hidden'); $('app').classList.add('hidden');
+                       $('cfgUrl').value = CFG.url; $('cfgToken').value = CFG.token; }
+function showApp()   { $('setup').classList.add('hidden'); $('app').classList.remove('hidden'); }
+
+$('btnSaveCfg').addEventListener('click', function () {
+  var url = $('cfgUrl').value.trim(), token = $('cfgToken').value.trim();
+  if (url.indexOf('/exec') === -1) { cfgMsg('ลิงก์ต้องลงท้ายด้วย /exec', 'err'); return; }
+  if (!token) { cfgMsg('ยังไม่ได้กรอกรหัสผ่าน', 'err'); return; }
+  CFG.url = url; CFG.token = token;
+  try { localStorage.setItem('sc_url', url); localStorage.setItem('sc_token', token); } catch (e) {}
+  cfgMsg('กำลังเชื่อมต่อ...', 'wait');
+  fetchRooms(function (ok, err) {
+    if (ok) showApp(); else cfgMsg('เชื่อมต่อไม่สำเร็จ : ' + err, 'err');
+  });
+});
+function cfgMsg(t, c) { var el = $('cfgMsg'); el.textContent = t; el.className = 'msg show ' + c; }
+$('btnCfg').addEventListener('click', showSetup);
+
+/* ---------- โหลดรายห้อง ---------- */
+function fetchRooms(cb) {
+  fetch(CFG.url + '?action=rooms&token=' + encodeURIComponent(CFG.token))
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { cb(false, d.error); return; }
+      var sel = $('room');
+      sel.innerHTML = '<option value="">— ทุกห้อง —</option>';
+      d.rooms.forEach(function (r) {
+        var o = document.createElement('option');
+        o.value = r.room;
+        o.textContent = r.room + '  (' + r.withPhoto + '/' + r.total + ' มีรูป)';
+        sel.appendChild(o);
+      });
+      cb(true);
+    })
+    .catch(function (e) { cb(false, e.message); });
+}
+
+/* ---------- โหลดข้อมูลบัตร (ทยอยทีละชุด) ---------- */
+$('btnLoad').addEventListener('click', function () {
+  loaded = [];
+  $('sheets').innerHTML = '';
+  $('btnPrint').disabled = true;
+  $('btnMark').disabled = true;
+  $('btnLoad').disabled = true;
+  loadBatch(0);
+});
+
+function loadBatch(start) {
+  var url = CFG.url
+    + '?action=cards&token=' + encodeURIComponent(CFG.token)
+    + '&room=' + encodeURIComponent($('room').value)
+    + '&onlyWithPhoto=' + ($('onlyPhoto').checked ? '1' : '0')
+    + '&start=' + start;
+
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { msg('โหลดไม่สำเร็จ : ' + d.error, 'err'); $('btnLoad').disabled = false; return; }
+
+      schoolTh = d.school; schoolEn = d.schoolEn;
+      loaded = loaded.concat(d.cards);
+      msg('กำลังโหลดรูป ' + loaded.length + ' / ' + d.total + ' คน...', 'wait');
+
+      if (d.next !== null && d.next !== undefined) {
+        loadBatch(d.next);
+      } else {
+        render();
+        $('btnLoad').disabled = false;
+        if (loaded.length) { $('btnPrint').disabled = false; $('btnMark').disabled = false; }
+        msg('พร้อมพิมพ์ ' + loaded.length + ' ใบ (' + Math.ceil(loaded.length / 9) + ' แผ่น)', 'ok');
+      }
+    })
+    .catch(function (e) { msg('โหลดไม่สำเร็จ : ' + e.message, 'err'); $('btnLoad').disabled = false; });
+}
+
+/* ---------- วาดบัตรลงแผ่น ---------- */
+function render() {
+  var box = $('sheets');
+  box.innerHTML = '';
+  $('count').textContent = loaded.length + ' ใบ';
+
+  for (var i = 0; i < loaded.length; i += 9) {
+    var page = document.createElement('div');
+    page.className = 'page';
+    loaded.slice(i, i + 9).forEach(function (s) {
+      page.appendChild(makeCard(s));
+    });
+    box.appendChild(page);
+  }
+}
+
+function makeCard(s) {
+  var el = document.createElement('div');
+  el.className = 'idcard';
+  el.innerHTML =
+    (logoOk ? '<div class="logo"><img src="' + LOGO + '" onerror="this.parentNode.style.display=\'none\'"></div>' : '') +
+    '<div class="sch-th">' + esc(schoolTh) + '</div>' +
+    '<div class="sch-en">' + esc(schoolEn) + '</div>' +
+    '<div class="photo">' + (s.photo ? '<img src="' + s.photo + '">' : '') + '</div>' +
+    '<div class="nm">' + esc(s.name) + '</div>' +
+    (s.nickname ? '<div class="nk">' + esc(s.nickname) + '</div>' : '') +
+    '<div class="type">' + esc(s.type || 'Student') + '</div>' +
+    '<div class="info">' +
+      '<div><b>รหัสนักเรียน</b> <span>' + esc(s.id) + '</span></div>' +
+      '<div><b>ระดับชั้น</b> <span>' + esc(s.level || '-') + '</span></div>' +
+      '<div><b>ห้องเรียน</b> <span>' + esc(s.room || '-') + '</span></div>' +
+    '</div>' +
+    '<div class="foot">' + esc(schoolEn) + '</div>';
+  return el;
+}
+
+/* ---------- พิมพ์ / ติดสถานะ ---------- */
+$('btnPrint').addEventListener('click', function () { window.print(); });
+
+$('btnMark').addEventListener('click', function () {
+  if (!loaded.length) return;
+  if (!confirm('ติดสถานะ "พิมพ์แล้ว" ให้ ' + loaded.length + ' คนที่แสดงอยู่?')) return;
+
+  $('btnMark').disabled = true;
+  msg('กำลังอัปเดตสถานะ...', 'wait');
+
+  fetch(CFG.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      token: CFG.token, action: 'markPrinted',
+      ids: loaded.map(function (s) { return s.id; })
+    })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) msg('อัปเดตสถานะแล้ว ' + d.updated + ' คน', 'ok');
+      else { msg('อัปเดตไม่สำเร็จ : ' + d.error, 'err'); $('btnMark').disabled = false; }
+    })
+    .catch(function (e) { msg('อัปเดตไม่สำเร็จ : ' + e.message, 'err'); $('btnMark').disabled = false; });
+});
+
+/* ---------- ตัวช่วย ---------- */
+function msg(t, c) { var el = $('msg'); el.textContent = t; el.className = 'msg show ' + c; }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+/* ---------- เริ่ม ---------- */
+if (loadCfg()) {
+  showApp();
+  msg('กำลังโหลดรายชื่อห้อง...', 'wait');
+  fetchRooms(function (ok, err) {
+    if (ok) msg('เลือกห้องแล้วกดโหลดข้อมูลบัตร', 'ok');
+    else { msg('เชื่อมต่อไม่สำเร็จ : ' + err, 'err'); showSetup(); }
+  });
+} else {
+  showSetup();
+}
+</script>
+</body>
+</html>
