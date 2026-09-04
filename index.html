@@ -57,6 +57,27 @@
     position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
     aspect-ratio: 3/4; border: 2px dashed rgba(255,255,255,.9); pointer-events: none;
   }
+  /* เส้นไกด์จัดท่า */
+  .guide .gl { position: absolute; background: rgba(255,220,0,.9); }
+  .guide .gl.h { left: 0; right: 0; height: 1px; }
+  .guide .gl.v { top: 0; bottom: 0; width: 1px; left: 50%; background: rgba(255,255,255,.55); }
+  .guide .gl .tag {
+    position: absolute; left: 2px; top: -13px; font-size: 10px; color: #ffdc00;
+    text-shadow: 0 0 3px #000; white-space: nowrap;
+  }
+  /* เงาหัว-ไหล่ให้ทาบ */
+  .guide .sil { position: absolute; left: 50%; transform: translateX(-50%); }
+  .guide .sil .head {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    border: 1.5px dashed rgba(255,255,255,.75); border-radius: 50%;
+  }
+  .guide .sil .body {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    border: 1.5px dashed rgba(255,255,255,.75);
+    border-bottom: none; border-radius: 46% 46% 0 0;
+  }
+  .guide.off { }
+  .guide.off .gl, .guide.off .sil { display: none; }
   .mirror video { transform: scaleX(-1); }
 
   .who { text-align: center; padding: 6px 0 2px; }
@@ -82,6 +103,12 @@
 
   .btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .tiny { font-size: 12px; color: #7a8496; margin-top: 10px; }
+  .chk { font-weight: 400; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+  .chk input { width: auto; }
+  #guideCtl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 14px; margin-top: 10px; }
+  #guideCtl label { margin: 0; }
+  #guideCtl .val { color: var(--navy); font-weight: 600; }
+  #guideCtl input[type=range] { width: 100%; padding: 0; }
   .hidden { display: none !important; }
   .setup { max-width: 520px; margin: 40px auto; }
 </style>
@@ -104,7 +131,7 @@
   <!-- ============ หน้าทำงานจริง ============ -->
   <div id="app" class="hidden">
     <header>
-      <h1>ถ่ายรูปติดบัตรนักเรียน <span style="font-size:13px;font-weight:400;color:#8a94a6">v3</span></h1>
+      <h1>ถ่ายรูปติดบัตรนักเรียน <span style="font-size:13px;font-weight:400;color:#8a94a6">v4</span></h1>
       <div>
         <span id="counter" class="counter"></span>
         <button class="ghost" id="btnReload" style="padding:7px 14px;font-size:13px">โหลดรายชื่อใหม่</button>
@@ -118,12 +145,29 @@
       <div class="col-cam card">
         <div id="stage" class="stage">
           <video id="video" autoplay playsinline muted></video>
-          <div class="guide"></div>
+          <div class="guide" id="guide">
+            <div class="gl h" id="glTop"><span class="tag">กระหม่อม</span></div>
+            <div class="gl h" id="glSh"><span class="tag">ไหล่</span></div>
+            <div class="gl v"></div>
+            <div class="sil" id="sil">
+              <div class="head" id="silHead"></div>
+              <div class="body" id="silBody"></div>
+            </div>
+          </div>
         </div>
         <div class="btnbar">
           <button id="btnStart">เปิดกล้อง</button>
           <button id="btnShot" disabled>ถ่ายรูป</button>
           <button id="btnMirror" class="ghost">กลับด้านภาพ</button>
+          <label class="chk"><input type="checkbox" id="optGuide" checked> เส้นไกด์</label>
+        </div>
+        <div id="guideCtl">
+          <label>ระดับกระหม่อม <span class="val" id="vTop"></span></label>
+          <input type="range" id="slTop" min="4" max="30" step="1">
+          <label>ระดับไหล่ <span class="val" id="vSh"></span></label>
+          <input type="range" id="slSh" min="55" max="95" step="1">
+          <label>ขนาดหัว <span class="val" id="vHead"></span></label>
+          <input type="range" id="slHead" min="18" max="45" step="1">
         </div>
         <label>อุปกรณ์ภาพ</label>
         <select id="devices"><option value="">— กดเปิดกล้องก่อน —</option></select>
@@ -350,6 +394,64 @@ $('btnStart').addEventListener('click', function () {
 $('devices').addEventListener('change', function () { startCam(this.value || null, false, !!this.value); });
 $('btnMirror').addEventListener('click', function () { $('stage').classList.toggle('mirror'); });
 
+/* ==================== เส้นไกด์จัดท่า ==================== */
+
+function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+function loadGuide() {
+  $('slTop').value  = lsGet('sc_gTop', '12');
+  $('slSh').value   = lsGet('sc_gSh', '78');
+  $('slHead').value = lsGet('sc_gHead', '30');
+  $('optGuide').checked = lsGet('sc_gOn', '1') === '1';
+  applyGuide();
+}
+
+function applyGuide() {
+  var top = parseFloat($('slTop').value);     // % จากขอบบนกรอบ
+  var sh  = parseFloat($('slSh').value);      // % จากขอบบนกรอบ
+  var hw  = parseFloat($('slHead').value);    // ความกว้างหัว เป็น % ของกรอบ
+
+  $('glTop').style.top = top + '%';
+  $('glSh').style.top = sh + '%';
+
+  // หัว: วงรีสูงกว่ากว้างเล็กน้อย เริ่มที่เส้นกระหม่อม
+  var headH = hw * 1.25;
+  $('silHead').style.width = hw + '%';
+  $('silHead').style.height = headH + '%';
+  $('silHead').style.top = top + '%';
+
+  // ไหล่: เริ่มใต้คางเล็กน้อย กว้างประมาณ 2 เท่าของหัว ลากลงถึงขอบล่าง
+  var bodyTop = top + headH * 0.92;
+  $('silBody').style.width = Math.min(hw * 2.1, 96) + '%';
+  $('silBody').style.top = bodyTop + '%';
+  $('silBody').style.height = Math.max(100 - bodyTop, 5) + '%';
+
+  $('sil').style.left = '50%';
+  $('sil').style.top = '0';
+  $('sil').style.width = '100%';
+  $('sil').style.height = '100%';
+
+  $('vTop').textContent = top + '%';
+  $('vSh').textContent = sh + '%';
+  $('vHead').textContent = hw + '%';
+
+  $('guide').classList.toggle('off', !$('optGuide').checked);
+}
+
+['slTop', 'slSh', 'slHead'].forEach(function (id) {
+  $(id).addEventListener('input', function () {
+    lsSet('sc_gTop', $('slTop').value);
+    lsSet('sc_gSh', $('slSh').value);
+    lsSet('sc_gHead', $('slHead').value);
+    applyGuide();
+  });
+});
+$('optGuide').addEventListener('change', function () {
+  lsSet('sc_gOn', this.checked ? '1' : '0');
+  applyGuide();
+});
+
 /* ==================== ถ่าย / บันทึก ==================== */
 
 function shoot() {
@@ -442,6 +544,8 @@ function escapeHtml(s) {
 }
 
 /* ==================== เริ่มทำงาน ==================== */
+
+loadGuide();
 
 if (loadCfg()) {
   showApp();
