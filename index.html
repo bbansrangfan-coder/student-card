@@ -137,7 +137,7 @@
 
         <div id="who" class="who"><div class="empty">ยังไม่ได้เลือกนักเรียน</div></div>
 
-        <img id="preview" alt="">
+        <img id="preview" alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
 
         <div class="btnbar">
           <button id="btnSave" class="green" disabled>บันทึกรูป</button>
@@ -365,9 +365,11 @@ function shoot() {
   msg('ถ่ายแล้ว ตรวจดูรูปก่อนกดบันทึก', 'wait');
 }
 
+var BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 function clearShot() {
   shotData = null;
-  $('preview').removeAttribute('src');
+  $('preview').src = BLANK_IMG;
   $('btnSave').disabled = true;
   $('btnRetake').disabled = true;
 }
