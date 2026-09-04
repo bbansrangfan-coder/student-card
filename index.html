@@ -126,7 +126,7 @@
           <button id="btnMirror" class="ghost">กลับด้านภาพ</button>
         </div>
         <label>อุปกรณ์ภาพ</label>
-        <select id="devices"><option>— กดเปิดกล้องก่อน —</option></select>
+        <select id="devices"><option value="">— กดเปิดกล้องก่อน —</option></select>
         <div class="tiny">เคล็ดลับ พิมพ์รหัสแล้วกด Enter เพื่อค้นหา จากนั้นกด Enter ซ้ำเพื่อถ่าย</div>
       </div>
 
@@ -273,14 +273,15 @@ $('sid').addEventListener('keydown', function (e) {
 
 /* ==================== กล้อง ==================== */
 
-function startCam(deviceId) {
+function startCam(deviceId, isRetry) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     msg('เบราว์เซอร์นี้เรียกกล้องไม่ได้', 'err'); return;
   }
   stopCam();
 
+  // deviceId ที่จำไว้อาจใช้ไม่ได้แล้ว (สลับพอร์ต/ถอดสาย) จึงใช้แบบ ideal ไม่ใช่ exact
   var v = deviceId
-    ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    ? { deviceId: { ideal: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
     : { width: { ideal: 1920 }, height: { ideal: 1080 } };
 
   navigator.mediaDevices.getUserMedia({ video: v, audio: false })
@@ -306,6 +307,14 @@ function startCam(deviceId) {
       msg('เปิดกล้องแล้ว : ' + t.label, 'ok');
     })
     .catch(function (err) {
+      // ขออุปกรณ์ที่ระบุไม่ได้ ลองใหม่แบบปล่อยให้ระบบเลือกเอง
+      if (!isRetry && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+        try { localStorage.removeItem('sc_device'); } catch (e) {}
+        $('devices').value = '';
+        msg('เลือกอุปกรณ์เดิมไม่ได้ กำลังลองใหม่...', 'wait');
+        startCam(null, true);
+        return;
+      }
       msg('เปิดกล้องไม่สำเร็จ (' + err.name + ') ' + err.message, 'err');
     });
 }
@@ -321,7 +330,7 @@ $('btnStart').addEventListener('click', function () {
   try { saved = localStorage.getItem('sc_device'); } catch (e) {}
   startCam($('devices').value || saved || null);
 });
-$('devices').addEventListener('change', function () { if (stream) startCam(this.value); });
+$('devices').addEventListener('change', function () { if (stream) startCam(this.value || null); });
 $('btnMirror').addEventListener('click', function () { $('stage').classList.toggle('mirror'); });
 
 /* ==================== ถ่าย / บันทึก ==================== */
