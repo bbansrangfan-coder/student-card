@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ถ่ายรูปติดบัตรนักเรียน</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a3a6b;
+    --line: #d7dee9;
+    --bg: #eef1f6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 18px;
+    font-family: "Prompt", "Segoe UI", sans-serif;
+    background: var(--bg); color: #1a2233;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  h1 { font-size: 20px; margin: 0; color: var(--navy); font-weight: 600; }
+  .counter { font-size: 14px; color: #556; }
+
+  .card {
+    background: #fff; border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 5px rgba(20,40,80,.08);
+  }
+  .row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .col-cam { flex: 2 1 520px; }
+  .col-info { flex: 1 1 320px; }
+
+  button {
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    padding: 11px 20px; border: none; border-radius: 9px;
+    background: var(--navy); color: #fff; cursor: pointer;
+  }
+  button.ghost { background: #e4e9f2; color: var(--navy); }
+  button.green { background: #137333; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+
+  input, select {
+    font-family: inherit; font-size: 15px; width: 100%;
+    padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px;
+    background: #fff;
+  }
+  input#sid { font-size: 26px; font-weight: 600; text-align: center; letter-spacing: 2px; }
+  label { display: block; font-size: 13px; color: #556; margin: 10px 0 5px; font-weight: 500; }
+
+  .stage { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; }
+  video, .stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .guide {
+    position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+    aspect-ratio: 3/4; border: 2px dashed rgba(255,255,255,.9); pointer-events: none;
+  }
+  .mirror video { transform: scaleX(-1); }
+
+  .who { text-align: center; padding: 6px 0 2px; }
+  .who .nm { font-size: 24px; font-weight: 600; line-height: 1.3; }
+  .who .nk { font-size: 18px; color: var(--navy); }
+  .who .meta { font-size: 15px; color: #556; margin-top: 6px; }
+  .who .empty { color: #99a; font-size: 15px; padding: 20px 0; }
+
+  .pill {
+    display: inline-block; font-size: 12px; padding: 3px 12px;
+    border-radius: 999px; margin-top: 8px;
+  }
+  .pill.yes { background: #e6f4ea; color: #137333; }
+  .pill.no { background: #fce8e6; color: #b31412; }
+
+  #preview { width: 100%; border-radius: 10px; background: #f2f4f8; aspect-ratio: 3/4; object-fit: cover; }
+
+  .msg { margin-top: 10px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  .msg.show { display: block; }
+  .msg.ok { background: #e6f4ea; color: #137333; }
+  .msg.err { background: #fce8e6; color: #b31412; }
+  .msg.wait { background: #fef7e0; color: #8a6100; }
+
+  .btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .tiny { font-size: 12px; color: #7a8496; margin-top: 10px; }
+  .hidden { display: none !important; }
+  .setup { max-width: 520px; margin: 40px auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ หน้าตั้งค่าครั้งแรก ============ -->
+  <div id="setup" class="card setup hidden">
+    <h1 style="margin-bottom:6px">ตั้งค่าครั้งแรก</h1>
+    <div class="tiny" style="margin:0 0 14px">กรอกครั้งเดียว เบราว์เซอร์เครื่องนี้จะจำไว้ให้</div>
+    <label>ลิงก์ Web App (ลงท้ายด้วย /exec)</label>
+    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <label>รหัสผ่าน</label>
+    <input id="cfgToken" type="password" placeholder="รหัสผ่านแอดมิน">
+    <div class="btnbar"><button id="btnSaveCfg">บันทึกและเชื่อมต่อ</button></div>
+    <div id="cfgMsg" class="msg"></div>
+  </div>
+
+  <!-- ============ หน้าทำงานจริง ============ -->
+  <div id="app" class="hidden">
+    <header>
+      <h1>ถ่ายรูปติดบัตรนักเรียน</h1>
+      <div>
+        <span id="counter" class="counter"></span>
+        <button class="ghost" id="btnReload" style="padding:7px 14px;font-size:13px">โหลดรายชื่อใหม่</button>
+        <button class="ghost" id="btnCfg" style="padding:7px 14px;font-size:13px">ตั้งค่า</button>
+      </div>
+    </header>
+
+    <div class="row">
+
+      <!-- กล้อง -->
+      <div class="col-cam card">
+        <div id="stage" class="stage">
+          <video id="video" autoplay playsinline muted></video>
+          <div class="guide"></div>
+        </div>
+        <div class="btnbar">
+          <button id="btnStart">เปิดกล้อง</button>
+          <button id="btnShot" disabled>ถ่ายรูป</button>
+          <button id="btnMirror" class="ghost">กลับด้านภาพ</button>
+        </div>
+        <label>อุปกรณ์ภาพ</label>
+        <select id="devices"><option>— กดเปิดกล้องก่อน —</option></select>
+        <div class="tiny">เคล็ดลับ พิมพ์รหัสแล้วกด Enter เพื่อค้นหา จากนั้นกด Enter ซ้ำเพื่อถ่าย</div>
+      </div>
+
+      <!-- ข้อมูล -->
+      <div class="col-info card">
+        <label>รหัสนักเรียน</label>
+        <input id="sid" placeholder="กรอกรหัส" autocomplete="off">
+
+        <div id="who" class="who"><div class="empty">ยังไม่ได้เลือกนักเรียน</div></div>
+
+        <img id="preview" alt="">
+
+        <div class="btnbar">
+          <button id="btnSave" class="green" disabled>บันทึกรูป</button>
+          <button id="btnRetake" class="ghost" disabled>ถ่ายใหม่</button>
+        </div>
+        <div id="msg" class="msg"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ==================== ตัวแปรรวม ==================== */
+var CFG = { url: '', token: '' };
+var students = [];      // รายชื่อทั้งหมดที่โหลดมาเก็บไว้ในเครื่อง
+var index = {};         // รหัส -> ข้อมูล
+var current = null;     // นักเรียนที่เลือกอยู่
+var shotData = null;    // รูปที่เพิ่งถ่าย (dataURL)
+var stream = null;
+
+var $ = function (id) { return document.getElementById(id); };
+
+/* ==================== ตั้งค่า ==================== */
+
+function loadCfg() {
+  try {
+    CFG.url = localStorage.getItem('sc_url') || '';
+    CFG.token = localStorage.getItem('sc_token') || '';
+  } catch (e) { /* ปิด localStorage ไว้ */ }
+  return CFG.url && CFG.token;
+}
+
+function showSetup() {
+  $('setup').classList.remove('hidden');
+  $('app').classList.add('hidden');
+  $('cfgUrl').value = CFG.url;
+  $('cfgToken').value = CFG.token;
+}
+
+function showApp() {
+  $('setup').classList.add('hidden');
+  $('app').classList.remove('hidden');
+}
+
+$('btnSaveCfg').addEventListener('click', function () {
+  var url = $('cfgUrl').value.trim();
+  var token = $('cfgToken').value.trim();
+  if (url.indexOf('/exec') === -1) { cfgMsg('ลิงก์ต้องลงท้ายด้วย /exec', 'err'); return; }
+  if (!token) { cfgMsg('ยังไม่ได้กรอกรหัสผ่าน', 'err'); return; }
+
+  CFG.url = url; CFG.token = token;
+  try {
+    localStorage.setItem('sc_url', url);
+    localStorage.setItem('sc_token', token);
+  } catch (e) { /* ไม่เป็นไร ใช้ได้จนกว่าจะปิดหน้า */ }
+
+  cfgMsg('กำลังเชื่อมต่อ...', 'wait');
+  fetchStudents(function (ok, err) {
+    if (ok) { showApp(); }
+    else { cfgMsg('เชื่อมต่อไม่สำเร็จ : ' + err, 'err'); }
+  });
+});
+
+function cfgMsg(text, cls) {
+  var el = $('cfgMsg');
+  el.textContent = text;
+  el.className = 'msg show ' + cls;
+}
+
+$('btnCfg').addEventListener('click', showSetup);
+
+/* ==================== โหลดรายชื่อ ==================== */
+
+function fetchStudents(cb) {
+  var url = CFG.url + '?action=list&token=' + encodeURIComponent(CFG.token);
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { cb(false, d.error); return; }
+      students = d.students || [];
+      index = {};
+      students.forEach(function (s) { index[s.id] = s; });
+      updateCounter();
+      cb(true);
+    })
+    .catch(function (e) { cb(false, e.message); });
+}
+
+function updateCounter() {
+  var done = students.filter(function (s) { return s.hasPhoto; }).length;
+  $('counter').textContent = 'ถ่ายแล้ว ' + done + ' / ' + students.length + ' คน   ';
+}
+
+$('btnReload').addEventListener('click', function () {
+  msg('กำลังโหลดรายชื่อ...', 'wait');
+  fetchStudents(function (ok, err) {
+    if (ok) msg('โหลดรายชื่อใหม่แล้ว ' + students.length + ' คน', 'ok');
+    else msg('โหลดไม่สำเร็จ : ' + err, 'err');
+  });
+});
+
+/* ==================== ค้นหานักเรียน ==================== */
+
+function lookup() {
+  var id = $('sid').value.trim();
+  var s = index[id];
+  current = s || null;
+  clearShot();
+
+  if (!id) { $('who').innerHTML = '<div class="empty">ยังไม่ได้เลือกนักเรียน</div>'; return; }
+  if (!s) {
+    $('who').innerHTML = '<div class="empty" style="color:#b31412">ไม่พบรหัส ' + escapeHtml(id) + ' ในรายชื่อ</div>';
+    return;
+  }
+
+  $('who').innerHTML =
+    '<div class="nm">' + escapeHtml(s.name) + '</div>' +
+    (s.nickname ? '<div class="nk">' + escapeHtml(s.nickname) + '</div>' : '') +
+    '<div class="meta">' + escapeHtml(s.level || '-') + '　ห้อง ' + escapeHtml(s.room || '-') + '</div>' +
+    '<span class="pill ' + (s.hasPhoto ? 'yes' : 'no') + '">' +
+      (s.hasPhoto ? 'มีรูปแล้ว ถ่ายใหม่จะทับของเดิม' : 'ยังไม่มีรูป') + '</span>';
+}
+
+$('sid').addEventListener('input', lookup);
+$('sid').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if (current && stream && !shotData) shoot();
+  else lookup();
+});
+
+/* ==================== กล้อง ==================== */
+
+function startCam(deviceId) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    msg('เบราว์เซอร์นี้เรียกกล้องไม่ได้', 'err'); return;
+  }
+  stopCam();
+
+  var v = deviceId
+    ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    : { width: { ideal: 1920 }, height: { ideal: 1080 } };
+
+  navigator.mediaDevices.getUserMedia({ video: v, audio: false })
+    .then(function (s) {
+      stream = s;
+      $('video').srcObject = s;
+      $('btnShot').disabled = false;
+      return navigator.mediaDevices.enumerateDevices();
+    })
+    .then(function (list) {
+      var cams = list.filter(function (d) { return d.kind === 'videoinput'; });
+      var sel = $('devices');
+      sel.innerHTML = '';
+      cams.forEach(function (d, i) {
+        var o = document.createElement('option');
+        o.value = d.deviceId;
+        o.textContent = d.label || ('อุปกรณ์ที่ ' + (i + 1));
+        sel.appendChild(o);
+      });
+      var t = stream.getVideoTracks()[0];
+      if (t.getSettings && t.getSettings().deviceId) sel.value = t.getSettings().deviceId;
+      try { localStorage.setItem('sc_device', sel.value); } catch (e) {}
+      msg('เปิดกล้องแล้ว : ' + t.label, 'ok');
+    })
+    .catch(function (err) {
+      msg('เปิดกล้องไม่สำเร็จ (' + err.name + ') ' + err.message, 'err');
+    });
+}
+
+function stopCam() {
+  if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+  $('video').srcObject = null;
+  $('btnShot').disabled = true;
+}
+
+$('btnStart').addEventListener('click', function () {
+  var saved = null;
+  try { saved = localStorage.getItem('sc_device'); } catch (e) {}
+  startCam($('devices').value || saved || null);
+});
+$('devices').addEventListener('change', function () { if (stream) startCam(this.value); });
+$('btnMirror').addEventListener('click', function () { $('stage').classList.toggle('mirror'); });
+
+/* ==================== ถ่าย / บันทึก ==================== */
+
+function shoot() {
+  if (!stream) { msg('ยังไม่ได้เปิดกล้อง', 'err'); return; }
+  if (!current) { msg('ยังไม่ได้เลือกนักเรียน', 'err'); return; }
+
+  var video = $('video');
+  var vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) { msg('ยังไม่ได้ภาพจากกล้อง', 'err'); return; }
+
+  var ratio = 3 / 4;
+  var cw = vh * ratio, ch = vh;
+  if (cw > vw) { cw = vw; ch = vw / ratio; }
+  var sx = (vw - cw) / 2, sy = (vh - ch) / 2;
+
+  var outH = 1080, outW = Math.round(outH * ratio);
+  var cv = document.createElement('canvas');
+  cv.width = outW; cv.height = outH;
+  var ctx = cv.getContext('2d');
+
+  if ($('stage').classList.contains('mirror')) {
+    ctx.translate(outW, 0); ctx.scale(-1, 1);
+  }
+  ctx.drawImage(video, sx, sy, cw, ch, 0, 0, outW, outH);
+
+  shotData = cv.toDataURL('image/jpeg', 0.9);
+  $('preview').src = shotData;
+  $('btnSave').disabled = false;
+  $('btnRetake').disabled = false;
+  msg('ถ่ายแล้ว ตรวจดูรูปก่อนกดบันทึก', 'wait');
+}
+
+function clearShot() {
+  shotData = null;
+  $('preview').removeAttribute('src');
+  $('btnSave').disabled = true;
+  $('btnRetake').disabled = true;
+}
+
+$('btnShot').addEventListener('click', shoot);
+$('btnRetake').addEventListener('click', function () { clearShot(); msg('ถ่ายใหม่ได้เลย', 'wait'); });
+
+$('btnSave').addEventListener('click', function () {
+  if (!shotData || !current) return;
+  $('btnSave').disabled = true;
+  msg('กำลังบันทึก...', 'wait');
+
+  fetch(CFG.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      token: CFG.token,
+      action: 'savePhoto',
+      id: current.id,
+      dataUrl: shotData
+    })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { msg('บันทึกไม่สำเร็จ : ' + d.error, 'err'); $('btnSave').disabled = false; return; }
+      if (index[current.id]) index[current.id].hasPhoto = true;
+      updateCounter();
+      msg('บันทึกรูปของ ' + d.name + ' เรียบร้อย', 'ok');
+      clearShot();
+      $('sid').value = '';
+      $('who').innerHTML = '<div class="empty">พร้อมรับคนถัดไป</div>';
+      current = null;
+      $('sid').focus();
+    })
+    .catch(function (e) {
+      msg('บันทึกไม่สำเร็จ : ' + e.message, 'err');
+      $('btnSave').disabled = false;
+    });
+});
+
+/* ==================== ตัวช่วย ==================== */
+
+function msg(text, cls) {
+  var el = $('msg');
+  el.textContent = text;
+  el.className = 'msg show ' + cls;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+/* ==================== เริ่มทำงาน ==================== */
+
+if (loadCfg()) {
+  showApp();
+  msg('กำลังโหลดรายชื่อ...', 'wait');
+  fetchStudents(function (ok, err) {
+    if (ok) msg('โหลดรายชื่อแล้ว ' + students.length + ' คน กดเปิดกล้องเพื่อเริ่ม', 'ok');
+    else { msg('โหลดไม่สำเร็จ : ' + err, 'err'); showSetup(); }
+  });
+  $('sid').focus();
+} else {
+  showSetup();
+}
+</script>
+</body>
+</html>
