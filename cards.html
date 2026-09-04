@@ -6,10 +6,10 @@
 <title>ออกบัตรนักเรียน</title>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --navy: #1a3a6b; --line: #d7dee9; --bg: #eef1f6; }
+  :root { --navy: #1a3a6b; --line: #d7dee9; --bg: #eef1f6; --ink: #1a2233; }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 18px; font-family: "Prompt", "Segoe UI", sans-serif;
-         background: var(--bg); color: #1a2233; }
+         background: var(--bg); color: var(--ink); }
   .wrap { max-width: 1180px; margin: 0 auto; }
 
   header { display: flex; align-items: center; justify-content: space-between;
@@ -24,13 +24,16 @@
            border: none; border-radius: 9px; background: var(--navy); color: #fff; cursor: pointer; }
   button.ghost { background: #e4e9f2; color: var(--navy); }
   button.green { background: #137333; }
+  button.small { padding: 7px 14px; font-size: 13px; }
   button:disabled { opacity: .4; cursor: not-allowed; }
   .btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
 
-  select, input { font-family: inherit; font-size: 15px; padding: 10px 12px;
-                  border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+  select, input[type=text], input[type=password] {
+    font-family: inherit; font-size: 15px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 9px; background: #fff; }
   label { display: block; font-size: 13px; color: #556; margin: 0 0 5px; font-weight: 500; }
   .field { display: inline-block; margin-right: 14px; vertical-align: top; }
+  .chk { font-weight: 400; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 
   .msg { margin-top: 10px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
   .msg.show { display: block; }
@@ -41,6 +44,10 @@
   .setup { max-width: 520px; margin: 40px auto; }
   .setup input { width: 100%; margin-bottom: 4px; }
   .tiny { font-size: 12px; color: #7a8496; }
+
+  .thumb { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 6px;
+           object-fit: contain; background: #f4f6fa; vertical-align: middle; }
+  .assets { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
 
   /* ---------- แผ่น A4 ---------- */
   #sheets { margin-top: 6px; }
@@ -55,15 +62,20 @@
 
   /* ---------- ตัวบัตร ---------- */
   .idcard {
-    width: 54mm; height: 85.6mm; background: #fff;
-    border: 0.2mm dashed #bbb; border-radius: 3mm;
-    padding: 3.5mm 3mm; text-align: center; overflow: hidden;
+    position: relative; width: 54mm; height: 85.6mm; background: #fff;
+    border-radius: 3mm; overflow: hidden;
     display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 3.5mm 3mm;
   }
+  .idcard.cut { outline: 0.2mm dashed #bbb; outline-offset: -0.1mm; }
+  .idcard .bg { position: absolute; inset: 0; width: 100%; height: 100%;
+                object-fit: cover; z-index: 0; }
+  .idcard > *:not(.bg) { position: relative; z-index: 1; }
+
   .idcard .logo { height: 9mm; margin-bottom: 1mm; }
   .idcard .logo img { height: 100%; object-fit: contain; }
-  .idcard .sch-th { font-size: 3.1mm; font-weight: 600; color: var(--navy); line-height: 1.2; }
-  .idcard .sch-en { font-size: 2.2mm; font-weight: 500; color: var(--navy); line-height: 1.3; margin-bottom: 1.5mm; }
+  .idcard .sch-th { font-size: 3.1mm; font-weight: 600; line-height: 1.2; }
+  .idcard .sch-en { font-size: 2.2mm; font-weight: 500; line-height: 1.3; margin-bottom: 1.5mm; }
 
   .idcard .photo {
     width: 27mm; height: 36mm; border: 0.6mm solid var(--navy); border-radius: 2mm;
@@ -72,18 +84,26 @@
   .idcard .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   .idcard .nm { font-size: 3.3mm; font-weight: 600; line-height: 1.25; }
-  .idcard .nk { font-size: 4.2mm; font-weight: 700; color: #111; line-height: 1.3; margin-bottom: 1mm; }
+  .idcard .nk { font-size: 4.2mm; font-weight: 700; line-height: 1.3; margin-bottom: 1mm; }
   .idcard .type {
     background: var(--navy); color: #fff; font-size: 2.6mm; font-weight: 600;
     padding: 0.8mm 4mm; border-radius: 1.5mm; margin-bottom: 1.8mm;
   }
   .idcard .info { font-size: 2.7mm; line-height: 1.55; width: 100%; }
-  .idcard .info span { color: #444; }
-  .idcard .info b { font-weight: 600; }
-  .idcard .foot {
-    margin-top: auto; width: 100%; border-top: 0.2mm solid var(--line);
-    padding-top: 1.2mm; font-size: 2.2mm; font-weight: 500; color: var(--navy);
-  }
+  .idcard .foot { margin-top: auto; width: 100%; padding-top: 1.2mm;
+                  font-size: 2.2mm; font-weight: 500; }
+
+  /* สีข้อความ 2 โหมด */
+  .idcard.dark { color: var(--navy); }
+  .idcard.dark .nm, .idcard.dark .nk { color: #111; }
+  .idcard.dark .foot { border-top: 0.2mm solid rgba(0,0,0,.15); }
+  .idcard.light { color: #fff; }
+  .idcard.light .nm, .idcard.light .nk, .idcard.light .info, .idcard.light .foot,
+  .idcard.light .sch-th, .idcard.light .sch-en { color: #fff;
+    text-shadow: 0 0 0.6mm rgba(0,0,0,.45); }
+  .idcard.light .foot { border-top: 0.2mm solid rgba(255,255,255,.35); }
+  .idcard.light .photo { border-color: #fff; }
+  .idcard.light .type { background: rgba(255,255,255,.92); color: var(--navy); text-shadow: none; }
 
   /* ---------- ตอนพิมพ์ ---------- */
   @page { size: A4 portrait; margin: 0; }
@@ -92,7 +112,7 @@
     .noprint { display: none !important; }
     .page { box-shadow: none; margin: 0; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
-    .idcard { border-color: #ddd; }
+    .idcard { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 </head>
@@ -104,9 +124,9 @@
     <h1 style="margin-bottom:6px">ตั้งค่าครั้งแรก</h1>
     <div class="tiny" style="margin:0 0 14px">ใช้ค่าเดียวกับหน้าถ่ายรูป</div>
     <label>ลิงก์ Web App (ลงท้ายด้วย /exec)</label>
-    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <input type="text" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
     <label style="margin-top:10px">รหัสผ่าน</label>
-    <input id="cfgToken" type="password">
+    <input type="password" id="cfgToken">
     <div class="btnbar"><button id="btnSaveCfg">บันทึกและเชื่อมต่อ</button></div>
     <div id="cfgMsg" class="msg"></div>
   </div>
@@ -114,12 +134,40 @@
   <!-- หน้าทำงาน -->
   <div id="app" class="hidden">
     <header class="noprint">
-      <h1>ออกบัตรนักเรียน <span class="ver">v1</span></h1>
-      <div>
-        <button class="ghost" id="btnCfg" style="padding:7px 14px;font-size:13px">ตั้งค่า</button>
-      </div>
+      <h1>ออกบัตรนักเรียน <span class="ver">v2</span></h1>
+      <button class="ghost small" id="btnCfg">ตั้งค่าการเชื่อมต่อ</button>
     </header>
 
+    <!-- โลโก้ / พื้นหลัง -->
+    <div class="card noprint">
+      <label style="margin-bottom:10px">รูปประกอบบัตร (เก็บไว้ในเบราว์เซอร์เครื่องนี้)</label>
+      <div class="assets">
+        <div>
+          <div class="tiny" style="margin-bottom:6px">โลโก้ (png พื้นโปร่ง)</div>
+          <img id="logoThumb" class="thumb" alt="">
+          <input type="file" id="fileLogo" accept="image/*" style="display:none">
+          <button class="ghost small" id="btnLogo">เลือกไฟล์</button>
+          <button class="ghost small" id="btnLogoClear">ลบ</button>
+        </div>
+        <div>
+          <div class="tiny" style="margin-bottom:6px">พื้นหลังบัตร (สัดส่วน 54 : 85.6)</div>
+          <img id="bgThumb" class="thumb" alt="">
+          <input type="file" id="fileBg" accept="image/*" style="display:none">
+          <button class="ghost small" id="btnBg">เลือกไฟล์</button>
+          <button class="ghost small" id="btnBgClear">ลบ</button>
+        </div>
+        <div>
+          <div class="tiny" style="margin-bottom:6px">การแสดงผล</div>
+          <label class="chk"><input type="checkbox" id="optLight"> ใช้ตัวหนังสือสีขาว</label>
+          <label class="chk"><input type="checkbox" id="optCut" checked> แสดงเส้นตัด</label>
+        </div>
+      </div>
+      <div class="tiny" style="margin-top:10px">
+        พื้นหลังจะถูกวางเต็มใบและครอปให้พอดีบัตร ถ้าลายเข้มให้ติ๊กตัวหนังสือสีขาว
+      </div>
+    </div>
+
+    <!-- เลือกห้อง -->
     <div class="card noprint">
       <div class="field">
         <label>ห้องเรียน</label>
@@ -128,9 +176,7 @@
       <div class="field">
         <label>ตัวเลือก</label>
         <div style="padding-top:9px">
-          <label style="display:inline;font-weight:400">
-            <input type="checkbox" id="onlyPhoto" checked style="width:auto"> เฉพาะคนที่มีรูปแล้ว
-          </label>
+          <label class="chk"><input type="checkbox" id="onlyPhoto" checked> เฉพาะคนที่มีรูปแล้ว</label>
         </div>
       </div>
       <div class="btnbar">
@@ -141,8 +187,8 @@
       </div>
       <div id="msg" class="msg"></div>
       <div class="tiny" style="margin-top:10px">
-        บัตรขนาด 54 × 85.6 มม. เรียง 9 ใบต่อแผ่น A4 · ตอนสั่งพิมพ์ให้ตั้ง Margins เป็น None
-        และ Scale เป็น 100% ห้ามใช้ Fit to page ไม่งั้นขนาดบัตรจะเพี้ยน
+        บัตร 54 × 85.6 มม. เรียง 9 ใบต่อแผ่น A4 · ตอนพิมพ์ตั้ง Margins เป็น None,
+        Scale 100% (ห้าม Fit to page) และเปิด Background graphics ไม่งั้นพื้นหลังจะไม่ออก
       </div>
     </div>
 
@@ -153,14 +199,13 @@
 
 <script>
 var CFG = { url: '', token: '' };
-var loaded = [];       // ข้อมูลบัตรที่โหลดมาแล้ว
+var loaded = [];
 var schoolTh = '', schoolEn = '';
-var LOGO = 'logo.png'; // ไฟล์โลโก้ใน repo เดียวกัน
-var logoOk = true;
+var logoData = '', bgData = '';
 
 var $ = function (id) { return document.getElementById(id); };
 
-/* ---------- ตั้งค่า ---------- */
+/* ---------- ตั้งค่าเชื่อมต่อ ---------- */
 function loadCfg() {
   try {
     CFG.url = localStorage.getItem('sc_url') || '';
@@ -179,12 +224,71 @@ $('btnSaveCfg').addEventListener('click', function () {
   CFG.url = url; CFG.token = token;
   try { localStorage.setItem('sc_url', url); localStorage.setItem('sc_token', token); } catch (e) {}
   cfgMsg('กำลังเชื่อมต่อ...', 'wait');
-  fetchRooms(function (ok, err) {
-    if (ok) showApp(); else cfgMsg('เชื่อมต่อไม่สำเร็จ : ' + err, 'err');
-  });
+  fetchRooms(function (ok, err) { if (ok) showApp(); else cfgMsg('เชื่อมต่อไม่สำเร็จ : ' + err, 'err'); });
 });
 function cfgMsg(t, c) { var el = $('cfgMsg'); el.textContent = t; el.className = 'msg show ' + c; }
 $('btnCfg').addEventListener('click', showSetup);
+
+/* ---------- โลโก้ / พื้นหลัง ---------- */
+var BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function loadAssets() {
+  try {
+    logoData = localStorage.getItem('sc_logo') || '';
+    bgData = localStorage.getItem('sc_bg') || '';
+    $('optLight').checked = localStorage.getItem('sc_light') === '1';
+    if (localStorage.getItem('sc_cut') === '0') $('optCut').checked = false;
+  } catch (e) {}
+  $('logoThumb').src = logoData || BLANK;
+  $('bgThumb').src = bgData || BLANK;
+}
+
+function pickImage(input, cb) {
+  var f = input.files && input.files[0];
+  if (!f) return;
+  if (f.size > 4 * 1024 * 1024) { msg('ไฟล์ใหญ่เกิน 4 MB ลองย่อก่อน', 'err'); return; }
+  var fr = new FileReader();
+  fr.onload = function () { cb(fr.result); };
+  fr.readAsDataURL(f);
+  input.value = '';
+}
+
+$('btnLogo').addEventListener('click', function () { $('fileLogo').click(); });
+$('fileLogo').addEventListener('change', function () {
+  pickImage(this, function (data) {
+    logoData = data; $('logoThumb').src = data;
+    try { localStorage.setItem('sc_logo', data); } catch (e) { msg('เก็บโลโก้ไม่ได้ ไฟล์อาจใหญ่เกิน', 'err'); }
+    render();
+  });
+});
+$('btnLogoClear').addEventListener('click', function () {
+  logoData = ''; $('logoThumb').src = BLANK;
+  try { localStorage.removeItem('sc_logo'); } catch (e) {}
+  render();
+});
+
+$('btnBg').addEventListener('click', function () { $('fileBg').click(); });
+$('fileBg').addEventListener('change', function () {
+  pickImage(this, function (data) {
+    bgData = data; $('bgThumb').src = data;
+    try { localStorage.setItem('sc_bg', data); } catch (e) { msg('เก็บพื้นหลังไม่ได้ ไฟล์อาจใหญ่เกิน', 'err'); }
+    render();
+  });
+});
+$('btnBgClear').addEventListener('click', function () {
+  bgData = ''; $('bgThumb').src = BLANK;
+  try { localStorage.removeItem('sc_bg'); } catch (e) {}
+  render();
+});
+
+$('optLight').addEventListener('change', function () {
+  try { localStorage.setItem('sc_light', this.checked ? '1' : '0'); } catch (e) {}
+  render();
+});
+$('optCut').addEventListener('change', function () {
+  try { localStorage.setItem('sc_cut', this.checked ? '1' : '0'); } catch (e) {}
+  render();
+});
 
 /* ---------- โหลดรายห้อง ---------- */
 function fetchRooms(cb) {
@@ -205,13 +309,10 @@ function fetchRooms(cb) {
     .catch(function (e) { cb(false, e.message); });
 }
 
-/* ---------- โหลดข้อมูลบัตร (ทยอยทีละชุด) ---------- */
+/* ---------- โหลดข้อมูลบัตร ---------- */
 $('btnLoad').addEventListener('click', function () {
-  loaded = [];
-  $('sheets').innerHTML = '';
-  $('btnPrint').disabled = true;
-  $('btnMark').disabled = true;
-  $('btnLoad').disabled = true;
+  loaded = []; $('sheets').innerHTML = '';
+  $('btnPrint').disabled = true; $('btnMark').disabled = true; $('btnLoad').disabled = true;
   loadBatch(0);
 });
 
@@ -226,7 +327,6 @@ function loadBatch(start) {
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (!d.ok) { msg('โหลดไม่สำเร็จ : ' + d.error, 'err'); $('btnLoad').disabled = false; return; }
-
       schoolTh = d.school; schoolEn = d.schoolEn;
       loaded = loaded.concat(d.cards);
       msg('กำลังโหลดรูป ' + loaded.length + ' / ' + d.total + ' คน...', 'wait');
@@ -243,27 +343,27 @@ function loadBatch(start) {
     .catch(function (e) { msg('โหลดไม่สำเร็จ : ' + e.message, 'err'); $('btnLoad').disabled = false; });
 }
 
-/* ---------- วาดบัตรลงแผ่น ---------- */
+/* ---------- วาดบัตร ---------- */
 function render() {
   var box = $('sheets');
   box.innerHTML = '';
-  $('count').textContent = loaded.length + ' ใบ';
+  $('count').textContent = loaded.length ? loaded.length + ' ใบ' : '';
 
   for (var i = 0; i < loaded.length; i += 9) {
     var page = document.createElement('div');
     page.className = 'page';
-    loaded.slice(i, i + 9).forEach(function (s) {
-      page.appendChild(makeCard(s));
-    });
+    loaded.slice(i, i + 9).forEach(function (s) { page.appendChild(makeCard(s)); });
     box.appendChild(page);
   }
 }
 
 function makeCard(s) {
   var el = document.createElement('div');
-  el.className = 'idcard';
+  el.className = 'idcard ' + ($('optLight').checked ? 'light' : 'dark') +
+                 ($('optCut').checked ? ' cut' : '');
   el.innerHTML =
-    (logoOk ? '<div class="logo"><img src="' + LOGO + '" onerror="this.parentNode.style.display=\'none\'"></div>' : '') +
+    (bgData ? '<img class="bg" src="' + bgData + '">' : '') +
+    (logoData ? '<div class="logo"><img src="' + logoData + '"></div>' : '') +
     '<div class="sch-th">' + esc(schoolTh) + '</div>' +
     '<div class="sch-en">' + esc(schoolEn) + '</div>' +
     '<div class="photo">' + (s.photo ? '<img src="' + s.photo + '">' : '') + '</div>' +
@@ -271,9 +371,9 @@ function makeCard(s) {
     (s.nickname ? '<div class="nk">' + esc(s.nickname) + '</div>' : '') +
     '<div class="type">' + esc(s.type || 'Student') + '</div>' +
     '<div class="info">' +
-      '<div><b>รหัสนักเรียน</b> <span>' + esc(s.id) + '</span></div>' +
-      '<div><b>ระดับชั้น</b> <span>' + esc(s.level || '-') + '</span></div>' +
-      '<div><b>ห้องเรียน</b> <span>' + esc(s.room || '-') + '</span></div>' +
+      '<div>รหัสนักเรียน ' + esc(s.id) + '</div>' +
+      '<div>ระดับชั้น ' + esc(s.level || '-') + '</div>' +
+      '<div>ห้องเรียน ' + esc(s.room || '-') + '</div>' +
     '</div>' +
     '<div class="foot">' + esc(schoolEn) + '</div>';
   return el;
@@ -285,17 +385,14 @@ $('btnPrint').addEventListener('click', function () { window.print(); });
 $('btnMark').addEventListener('click', function () {
   if (!loaded.length) return;
   if (!confirm('ติดสถานะ "พิมพ์แล้ว" ให้ ' + loaded.length + ' คนที่แสดงอยู่?')) return;
-
   $('btnMark').disabled = true;
   msg('กำลังอัปเดตสถานะ...', 'wait');
 
   fetch(CFG.url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      token: CFG.token, action: 'markPrinted',
-      ids: loaded.map(function (s) { return s.id; })
-    })
+    body: JSON.stringify({ token: CFG.token, action: 'markPrinted',
+                           ids: loaded.map(function (s) { return s.id; }) })
   })
     .then(function (r) { return r.json(); })
     .then(function (d) {
@@ -314,6 +411,7 @@ function esc(s) {
 }
 
 /* ---------- เริ่ม ---------- */
+loadAssets();
 if (loadCfg()) {
   showApp();
   msg('กำลังโหลดรายชื่อห้อง...', 'wait');
