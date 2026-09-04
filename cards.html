@@ -33,7 +33,8 @@
     border: 1px solid var(--line); border-radius: 9px; background: #fff; }
   label { display: block; font-size: 13px; color: #556; margin: 0 0 5px; font-weight: 500; }
   .field { display: inline-block; margin-right: 14px; vertical-align: top; }
-  .chk { font-weight: 400; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+  .chk { font-weight: 400; display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+         margin-right: 16px; }
 
   .msg { margin-top: 10px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
   .msg.show { display: block; }
@@ -49,6 +50,11 @@
            object-fit: contain; background: #f4f6fa; vertical-align: middle; }
   .assets { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
 
+  .sliders { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 4px; }
+  .sl { min-width: 190px; }
+  .sl input[type=range] { width: 100%; }
+  .sl .val { font-weight: 600; color: var(--navy); }
+
   /* ---------- แผ่น A4 ---------- */
   #sheets { margin-top: 6px; }
   .page {
@@ -62,38 +68,44 @@
 
   /* ---------- ตัวบัตร ---------- */
   .idcard {
+    --pad: 5mm;          /* ระยะขอบใน */
+    --pw: 23mm;          /* ความกว้างรูป */
+    --fs: 0.9;           /* ตัวคูณขนาดตัวอักษร */
     position: relative; width: 54mm; height: 85.6mm; background: #fff;
     border-radius: 3mm; overflow: hidden;
     display: flex; flex-direction: column; align-items: center;
-    text-align: center; padding: 3.5mm 3mm;
+    text-align: center; padding: var(--pad) 3mm;
   }
   .idcard.cut { outline: 0.2mm dashed #bbb; outline-offset: -0.1mm; }
+  .idcard.over { outline: 0.5mm solid #d93025; outline-offset: -0.25mm; }
   .idcard .bg { position: absolute; inset: 0; width: 100%; height: 100%;
                 object-fit: cover; z-index: 0; }
-  .idcard > *:not(.bg) { position: relative; z-index: 1; }
+  .idcard > *:not(.bg) { position: relative; z-index: 1; flex: none; }
 
-  .idcard .logo { height: 9mm; margin-bottom: 1mm; }
+  .idcard .logo { height: calc(8mm * var(--fs)); margin-bottom: 0.6mm; }
   .idcard .logo img { height: 100%; object-fit: contain; }
-  .idcard .sch-th { font-size: 3.1mm; font-weight: 600; line-height: 1.2; }
-  .idcard .sch-en { font-size: 2.2mm; font-weight: 500; line-height: 1.3; margin-bottom: 1.5mm; }
+  .idcard .sch-th { font-size: calc(3.0mm * var(--fs)); font-weight: 600; line-height: 1.15; }
+  .idcard .sch-en { font-size: calc(2.1mm * var(--fs)); font-weight: 500; line-height: 1.2;
+                    margin-bottom: 1.2mm; }
 
   .idcard .photo {
-    width: 27mm; height: 36mm; border: 0.6mm solid var(--navy); border-radius: 2mm;
-    overflow: hidden; background: #e8ecf3; margin-bottom: 2mm; flex: none;
+    width: var(--pw); height: calc(var(--pw) * 4 / 3);
+    border: 0.5mm solid var(--navy); border-radius: 1.6mm;
+    overflow: hidden; background: #e8ecf3; margin-bottom: 1.4mm;
   }
   .idcard .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  .idcard .nm { font-size: 3.3mm; font-weight: 600; line-height: 1.25; }
-  .idcard .nk { font-size: 4.2mm; font-weight: 700; line-height: 1.3; margin-bottom: 1mm; }
+  .idcard .nm { font-size: calc(3.1mm * var(--fs)); font-weight: 600; line-height: 1.2; }
+  .idcard .nk { font-size: calc(3.9mm * var(--fs)); font-weight: 700; line-height: 1.2;
+                margin-bottom: 0.8mm; }
   .idcard .type {
-    background: var(--navy); color: #fff; font-size: 2.6mm; font-weight: 600;
-    padding: 0.8mm 4mm; border-radius: 1.5mm; margin-bottom: 1.8mm;
+    background: var(--navy); color: #fff; font-size: calc(2.4mm * var(--fs)); font-weight: 600;
+    padding: 0.6mm 3.5mm; border-radius: 1.2mm; margin-bottom: 1.2mm;
   }
-  .idcard .info { font-size: 2.7mm; line-height: 1.55; width: 100%; }
-  .idcard .foot { margin-top: auto; width: 100%; padding-top: 1.2mm;
-                  font-size: 2.2mm; font-weight: 500; }
+  .idcard .info { font-size: calc(2.5mm * var(--fs)); line-height: 1.45; width: 100%; }
+  .idcard .foot { margin-top: auto; width: 100%; padding-top: 1mm;
+                  font-size: calc(2.0mm * var(--fs)); font-weight: 500; }
 
-  /* สีข้อความ 2 โหมด */
   .idcard.dark { color: var(--navy); }
   .idcard.dark .nm, .idcard.dark .nk { color: #111; }
   .idcard.dark .foot { border-top: 0.2mm solid rgba(0,0,0,.15); }
@@ -105,7 +117,6 @@
   .idcard.light .photo { border-color: #fff; }
   .idcard.light .type { background: rgba(255,255,255,.92); color: var(--navy); text-shadow: none; }
 
-  /* ---------- ตอนพิมพ์ ---------- */
   @page { size: A4 portrait; margin: 0; }
   @media print {
     body { background: #fff; padding: 0; }
@@ -113,6 +124,7 @@
     .page { box-shadow: none; margin: 0; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
     .idcard { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .idcard.over { outline: none; }
   }
 </style>
 </head>
@@ -134,40 +146,57 @@
   <!-- หน้าทำงาน -->
   <div id="app" class="hidden">
     <header class="noprint">
-      <h1>ออกบัตรนักเรียน <span class="ver">v2</span></h1>
+      <h1>ออกบัตรนักเรียน <span class="ver">v3</span></h1>
       <button class="ghost small" id="btnCfg">ตั้งค่าการเชื่อมต่อ</button>
     </header>
 
-    <!-- โลโก้ / พื้นหลัง -->
     <div class="card noprint">
       <label style="margin-bottom:10px">รูปประกอบบัตร (เก็บไว้ในเบราว์เซอร์เครื่องนี้)</label>
       <div class="assets">
         <div>
-          <div class="tiny" style="margin-bottom:6px">โลโก้ (png พื้นโปร่ง)</div>
+          <div class="tiny" style="margin-bottom:6px">โลโก้</div>
           <img id="logoThumb" class="thumb" alt="">
           <input type="file" id="fileLogo" accept="image/*" style="display:none">
-          <button class="ghost small" id="btnLogo">เลือกไฟล์</button>
+          <button class="ghost small" id="btnLogo">เลือก</button>
           <button class="ghost small" id="btnLogoClear">ลบ</button>
         </div>
         <div>
-          <div class="tiny" style="margin-bottom:6px">พื้นหลังบัตร (สัดส่วน 54 : 85.6)</div>
+          <div class="tiny" style="margin-bottom:6px">พื้นหลัง (54 : 85.6)</div>
           <img id="bgThumb" class="thumb" alt="">
           <input type="file" id="fileBg" accept="image/*" style="display:none">
-          <button class="ghost small" id="btnBg">เลือกไฟล์</button>
+          <button class="ghost small" id="btnBg">เลือก</button>
           <button class="ghost small" id="btnBgClear">ลบ</button>
         </div>
         <div>
           <div class="tiny" style="margin-bottom:6px">การแสดงผล</div>
-          <label class="chk"><input type="checkbox" id="optLight"> ใช้ตัวหนังสือสีขาว</label>
-          <label class="chk"><input type="checkbox" id="optCut" checked> แสดงเส้นตัด</label>
+          <label class="chk"><input type="checkbox" id="optLight"> ตัวหนังสือสีขาว</label>
+          <label class="chk"><input type="checkbox" id="optCut" checked> เส้นตัด</label>
+          <label class="chk"><input type="checkbox" id="optFoot"> แถบท้ายบัตร</label>
         </div>
       </div>
-      <div class="tiny" style="margin-top:10px">
-        พื้นหลังจะถูกวางเต็มใบและครอปให้พอดีบัตร ถ้าลายเข้มให้ติ๊กตัวหนังสือสีขาว
+
+      <div class="sliders">
+        <div class="sl">
+          <div class="tiny">ระยะขอบใน <span class="val" id="vPad"></span></div>
+          <input type="range" id="slPad" min="2" max="10" step="0.5">
+        </div>
+        <div class="sl">
+          <div class="tiny">ขนาดรูป <span class="val" id="vPw"></span></div>
+          <input type="range" id="slPw" min="16" max="32" step="0.5">
+        </div>
+        <div class="sl">
+          <div class="tiny">ขนาดตัวอักษร <span class="val" id="vFs"></span></div>
+          <input type="range" id="slFs" min="0.6" max="1.2" step="0.02">
+        </div>
+        <div class="sl" style="padding-top:14px">
+          <button class="ghost small" id="btnAuto">จัดให้พอดีอัตโนมัติ</button>
+        </div>
+      </div>
+      <div class="tiny" style="margin-top:8px">
+        ใบไหนเนื้อหาล้นจะขึ้นกรอบแดง ลองลดขนาดตัวอักษรหรือขนาดรูปจนกรอบแดงหาย
       </div>
     </div>
 
-    <!-- เลือกห้อง -->
     <div class="card noprint">
       <div class="field">
         <label>ห้องเรียน</label>
@@ -187,8 +216,8 @@
       </div>
       <div id="msg" class="msg"></div>
       <div class="tiny" style="margin-top:10px">
-        บัตร 54 × 85.6 มม. เรียง 9 ใบต่อแผ่น A4 · ตอนพิมพ์ตั้ง Margins เป็น None,
-        Scale 100% (ห้าม Fit to page) และเปิด Background graphics ไม่งั้นพื้นหลังจะไม่ออก
+        ตอนพิมพ์ตั้ง Margins เป็น None, Scale 100% (ห้าม Fit to page)
+        และเปิด Background graphics ไม่งั้นพื้นหลังจะไม่ออก
       </div>
     </div>
 
@@ -202,15 +231,15 @@ var CFG = { url: '', token: '' };
 var loaded = [];
 var schoolTh = '', schoolEn = '';
 var logoData = '', bgData = '';
+var BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 var $ = function (id) { return document.getElementById(id); };
+function ls(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lset(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
 /* ---------- ตั้งค่าเชื่อมต่อ ---------- */
 function loadCfg() {
-  try {
-    CFG.url = localStorage.getItem('sc_url') || '';
-    CFG.token = localStorage.getItem('sc_token') || '';
-  } catch (e) {}
+  CFG.url = ls('sc_url', ''); CFG.token = ls('sc_token', '');
   return CFG.url && CFG.token;
 }
 function showSetup() { $('setup').classList.remove('hidden'); $('app').classList.add('hidden');
@@ -222,26 +251,53 @@ $('btnSaveCfg').addEventListener('click', function () {
   if (url.indexOf('/exec') === -1) { cfgMsg('ลิงก์ต้องลงท้ายด้วย /exec', 'err'); return; }
   if (!token) { cfgMsg('ยังไม่ได้กรอกรหัสผ่าน', 'err'); return; }
   CFG.url = url; CFG.token = token;
-  try { localStorage.setItem('sc_url', url); localStorage.setItem('sc_token', token); } catch (e) {}
+  lset('sc_url', url); lset('sc_token', token);
   cfgMsg('กำลังเชื่อมต่อ...', 'wait');
   fetchRooms(function (ok, err) { if (ok) showApp(); else cfgMsg('เชื่อมต่อไม่สำเร็จ : ' + err, 'err'); });
 });
 function cfgMsg(t, c) { var el = $('cfgMsg'); el.textContent = t; el.className = 'msg show ' + c; }
 $('btnCfg').addEventListener('click', showSetup);
 
-/* ---------- โลโก้ / พื้นหลัง ---------- */
-var BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
+/* ---------- โลโก้ / พื้นหลัง / สไลเดอร์ ---------- */
 function loadAssets() {
-  try {
-    logoData = localStorage.getItem('sc_logo') || '';
-    bgData = localStorage.getItem('sc_bg') || '';
-    $('optLight').checked = localStorage.getItem('sc_light') === '1';
-    if (localStorage.getItem('sc_cut') === '0') $('optCut').checked = false;
-  } catch (e) {}
+  logoData = ls('sc_logo', ''); bgData = ls('sc_bg', '');
   $('logoThumb').src = logoData || BLANK;
   $('bgThumb').src = bgData || BLANK;
+
+  $('optLight').checked = ls('sc_light', '0') === '1';
+  $('optCut').checked   = ls('sc_cut', '1') === '1';
+  $('optFoot').checked  = ls('sc_foot', '0') === '1';
+
+  $('slPad').value = ls('sc_pad', '5');
+  $('slPw').value  = ls('sc_pw', '23');
+  $('slFs').value  = ls('sc_fs', '0.9');
+  showSliderValues();
 }
+
+function showSliderValues() {
+  $('vPad').textContent = $('slPad').value + ' มม.';
+  $('vPw').textContent  = $('slPw').value + ' มม.';
+  $('vFs').textContent  = Math.round($('slFs').value * 100) + '%';
+}
+
+['slPad', 'slPw', 'slFs'].forEach(function (id) {
+  $(id).addEventListener('input', function () {
+    showSliderValues();
+    lset('sc_pad', $('slPad').value);
+    lset('sc_pw', $('slPw').value);
+    lset('sc_fs', $('slFs').value);
+    applyStyle();
+  });
+});
+
+['optLight', 'optCut', 'optFoot'].forEach(function (id) {
+  $(id).addEventListener('change', function () {
+    lset('sc_light', $('optLight').checked ? '1' : '0');
+    lset('sc_cut', $('optCut').checked ? '1' : '0');
+    lset('sc_foot', $('optFoot').checked ? '1' : '0');
+    render();
+  });
+});
 
 function pickImage(input, cb) {
   var f = input.files && input.files[0];
@@ -255,25 +311,16 @@ function pickImage(input, cb) {
 
 $('btnLogo').addEventListener('click', function () { $('fileLogo').click(); });
 $('fileLogo').addEventListener('change', function () {
-  pickImage(this, function (data) {
-    logoData = data; $('logoThumb').src = data;
-    try { localStorage.setItem('sc_logo', data); } catch (e) { msg('เก็บโลโก้ไม่ได้ ไฟล์อาจใหญ่เกิน', 'err'); }
-    render();
-  });
+  pickImage(this, function (d) { logoData = d; $('logoThumb').src = d; lset('sc_logo', d); render(); });
 });
 $('btnLogoClear').addEventListener('click', function () {
   logoData = ''; $('logoThumb').src = BLANK;
   try { localStorage.removeItem('sc_logo'); } catch (e) {}
   render();
 });
-
 $('btnBg').addEventListener('click', function () { $('fileBg').click(); });
 $('fileBg').addEventListener('change', function () {
-  pickImage(this, function (data) {
-    bgData = data; $('bgThumb').src = data;
-    try { localStorage.setItem('sc_bg', data); } catch (e) { msg('เก็บพื้นหลังไม่ได้ ไฟล์อาจใหญ่เกิน', 'err'); }
-    render();
-  });
+  pickImage(this, function (d) { bgData = d; $('bgThumb').src = d; lset('sc_bg', d); render(); });
 });
 $('btnBgClear').addEventListener('click', function () {
   bgData = ''; $('bgThumb').src = BLANK;
@@ -281,14 +328,45 @@ $('btnBgClear').addEventListener('click', function () {
   render();
 });
 
-$('optLight').addEventListener('change', function () {
-  try { localStorage.setItem('sc_light', this.checked ? '1' : '0'); } catch (e) {}
-  render();
+/* จูนให้พอดีอัตโนมัติ: ค่อย ๆ ลดขนาดตัวอักษรจนไม่มีใบไหนล้น */
+$('btnAuto').addEventListener('click', function () {
+  if (!loaded.length) { msg('โหลดข้อมูลบัตรก่อน', 'err'); return; }
+  var fs = parseFloat($('slFs').value);
+  for (var i = 0; i < 30; i++) {
+    applyStyle();
+    if (countOverflow() === 0) break;
+    fs = Math.round((fs - 0.02) * 100) / 100;
+    if (fs < 0.6) break;
+    $('slFs').value = fs;
+  }
+  showSliderValues();
+  lset('sc_fs', $('slFs').value);
+  var over = countOverflow();
+  msg(over ? 'ยังล้นอยู่ ' + over + ' ใบ ลองลดขนาดรูปหรือระยะขอบในเพิ่ม'
+           : 'จัดให้พอดีแล้ว ขนาดตัวอักษร ' + Math.round($('slFs').value * 100) + '%',
+      over ? 'wait' : 'ok');
 });
-$('optCut').addEventListener('change', function () {
-  try { localStorage.setItem('sc_cut', this.checked ? '1' : '0'); } catch (e) {}
-  render();
-});
+
+function applyStyle() {
+  var pad = $('slPad').value + 'mm', pw = $('slPw').value + 'mm', fs = $('slFs').value;
+  var list = document.querySelectorAll('.idcard');
+  for (var i = 0; i < list.length; i++) {
+    list[i].style.setProperty('--pad', pad);
+    list[i].style.setProperty('--pw', pw);
+    list[i].style.setProperty('--fs', fs);
+  }
+  markOverflow();
+}
+
+function markOverflow() {
+  var list = document.querySelectorAll('.idcard');
+  for (var i = 0; i < list.length; i++) {
+    var el = list[i];
+    if (el.scrollHeight > el.clientHeight + 1) el.classList.add('over');
+    else el.classList.remove('over');
+  }
+}
+function countOverflow() { return document.querySelectorAll('.idcard.over').length; }
 
 /* ---------- โหลดรายห้อง ---------- */
 function fetchRooms(cb) {
@@ -337,7 +415,10 @@ function loadBatch(start) {
         render();
         $('btnLoad').disabled = false;
         if (loaded.length) { $('btnPrint').disabled = false; $('btnMark').disabled = false; }
-        msg('พร้อมพิมพ์ ' + loaded.length + ' ใบ (' + Math.ceil(loaded.length / 9) + ' แผ่น)', 'ok');
+        var over = countOverflow();
+        msg('พร้อมพิมพ์ ' + loaded.length + ' ใบ (' + Math.ceil(loaded.length / 9) + ' แผ่น)'
+            + (over ? ' — มี ' + over + ' ใบเนื้อหาล้น กดจัดให้พอดีอัตโนมัติ' : ''),
+            over ? 'wait' : 'ok');
       }
     })
     .catch(function (e) { msg('โหลดไม่สำเร็จ : ' + e.message, 'err'); $('btnLoad').disabled = false; });
@@ -355,6 +436,7 @@ function render() {
     loaded.slice(i, i + 9).forEach(function (s) { page.appendChild(makeCard(s)); });
     box.appendChild(page);
   }
+  applyStyle();
 }
 
 function makeCard(s) {
@@ -375,7 +457,7 @@ function makeCard(s) {
       '<div>ระดับชั้น ' + esc(s.level || '-') + '</div>' +
       '<div>ห้องเรียน ' + esc(s.room || '-') + '</div>' +
     '</div>' +
-    '<div class="foot">' + esc(schoolEn) + '</div>';
+    ($('optFoot').checked ? '<div class="foot">' + esc(schoolEn) + '</div>' : '');
   return el;
 }
 
